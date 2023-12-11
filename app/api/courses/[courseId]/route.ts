@@ -17,7 +17,7 @@ export async function PATCH(req: Request, { params }: { params: { courseId: stri
         id: courseId,
         createdById: userId,
       },
-      data: { title: values?.title, description: values?.description },
+      data: { title: values?.title, description: values?.description, imageUrl: values?.imageUrl },
     })
 
     return NextResponse.json(course)
