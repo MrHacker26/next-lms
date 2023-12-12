@@ -19,7 +19,7 @@ model Course {
   attachments Attachment[]
   category    Category?    @relation(fields: [categoryId], references: [id])
   categoryId  String?
-  chapter     Chapter[]
+  chapters    Chapter[]
   purchase    Purchase[]
 
   createdAt DateTime @default(now())
@@ -52,7 +52,7 @@ model Chapter {
   title       String
   description String?
   videoUrl    String?
-  positiuon   Int
+  position    Int
   isPublished Boolean @default(false)
   isFree      Boolean @default(false)
 
