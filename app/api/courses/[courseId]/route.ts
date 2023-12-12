@@ -23,6 +23,7 @@ export async function PATCH(req: Request, { params }: { params: { courseId: stri
         imageUrl: values?.imageUrl,
         categoryId: values?.categoryId,
         price: values?.price,
+        attachments: values?.attachments,
       },
     })
 
