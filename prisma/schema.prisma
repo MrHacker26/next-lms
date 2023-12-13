@@ -20,7 +20,7 @@ model Course {
   category    Category?    @relation(fields: [categoryId], references: [id])
   categoryId  String?
   chapters    Chapter[]
-  purchase    Purchase[]
+  purchases   Purchase[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
