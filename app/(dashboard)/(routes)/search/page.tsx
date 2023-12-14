@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { Categories } from './_component/category'
 import { SearchInput } from '@/components/search-input'
-import { getCourses } from '@/app/actions/get-courses'
+import { getCourses } from '@/actions/get-courses'
 import CoursesList from '@/components/course-list'
 
 interface SearchPageProps {

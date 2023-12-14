@@ -1,4 +1,4 @@
-import { CourseWithProgressAndCategory } from '@/app/actions/get-courses'
+import { CourseWithProgressAndCategory } from '@/actions/get-courses'
 import CourseCard from './course-card'
 
 type CoursesListProps = {
