@@ -1,13 +1,14 @@
 import { auth } from '@clerk/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isTeacher } from '@/lib/teacher'
 
 export async function DELETE(request: NextRequest, { params }: { params: { courseId: string; attachmentId: string } }) {
   try {
     const { courseId, attachmentId } = params
     const { userId } = auth()
 
-    if (!userId) {
+    if (!userId || !isTeacher(userId)) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
