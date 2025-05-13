@@ -1,23 +1,24 @@
-import { currentUser } from '@clerk/nextjs'
+import { currentUser } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { db } from '@/lib/db'
 import { stripe } from '@/lib/stripe'
 
-export async function POST(req: NextRequest, { params }: { params: { courseId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ courseId: string }> }) {
   try {
+    const resolvedParams = await params
     const user = await currentUser()
     if (!user || !user.id || !user.emailAddresses?.[0]?.emailAddress) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const course = await db.course.findUnique({ where: { id: params.courseId, isPublished: true } })
+    const course = await db.course.findUnique({ where: { id: resolvedParams.courseId, isPublished: true } })
     if (!course) {
       return new NextResponse('Course not found!', { status: 404 })
     }
 
     const purchase = await db.purchase.findUnique({
-      where: { userId_courseId: { userId: user.id, courseId: params.courseId } },
+      where: { userId_courseId: { userId: user.id, courseId: resolvedParams.courseId } },
     })
 
     if (purchase) {

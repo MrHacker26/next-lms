@@ -1,12 +1,12 @@
-import { auth } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 import { CheckCircle, Clock } from 'lucide-react'
+import { auth } from '@clerk/nextjs/server'
 import CoursesList from '@/components/course-list'
 import { getDashboardCourses } from '@/actions/get-dashboard-courses'
 import { InfoCard } from './_components/info-card'
 
 export default async function Dashboard() {
-  const { userId } = auth()
+  const { userId } = await auth()
 
   if (!userId) {
     return redirect('/')

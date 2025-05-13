@@ -1,24 +1,24 @@
-import { auth } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import CourseNavbar from './_components/course-navbar'
 import CourseSidebar from './_components/course-sidebar'
 import { getProgress } from '@/actions/get-progress'
 
-export default async function CourseLayout({
-  children,
-  params,
-}: {
+type CourseLayoutProps = {
   children: React.ReactNode
-  params: { courseId: string }
-}) {
-  const { userId } = auth()
+  params: Promise<{ courseId: string }>
+}
+
+export default async function CourseLayout({ children, params }: CourseLayoutProps) {
+  const { userId } = await auth()
   if (!userId) {
     return redirect('/')
   }
+  const resolvedParams = await params
 
   const course = await db.course.findUnique({
-    where: { id: params.courseId },
+    where: { id: await resolvedParams.courseId },
     include: {
       chapters: {
         where: { isPublished: true },

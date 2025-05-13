@@ -1,29 +1,32 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-type Params = { chapterId: string; courseId: string }
+type Params = Promise<{ chapterId: string; courseId: string }>
 
 export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   try {
-    const { userId } = auth()
+    const resolvedParams = await params
+    const { userId } = await auth()
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const ownCourse = await db.course.findUnique({ where: { id: params.courseId, createdById: userId } })
+    const ownCourse = await db.course.findUnique({ where: { id: resolvedParams.courseId, createdById: userId } })
     if (!ownCourse) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
     const unpublishedChapter = await db.chapter.update({
-      where: { id: params.chapterId, courseId: params.courseId },
+      where: { id: resolvedParams.chapterId, courseId: resolvedParams.courseId },
       data: { isPublished: false },
     })
 
-    const publishedChapters = await db.chapter.count({ where: { courseId: params.courseId, isPublished: true } })
+    const publishedChapters = await db.chapter.count({
+      where: { courseId: resolvedParams.courseId, isPublished: true },
+    })
     if (!publishedChapters) {
-      await db.course.update({ where: { id: params.courseId }, data: { isPublished: false } })
+      await db.course.update({ where: { id: resolvedParams.courseId }, data: { isPublished: false } })
     }
 
     return NextResponse.json(unpublishedChapter)

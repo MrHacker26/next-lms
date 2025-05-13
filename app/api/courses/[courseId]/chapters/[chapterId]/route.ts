@@ -1,14 +1,15 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Mux from '@mux/mux-node'
 import { db } from '@/lib/db'
 
-type Params = { chapterId: string; courseId: string }
+type Params = Promise<{ chapterId: string; courseId: string }>
 
 const { Video } = new Mux(process.env.MUX_TOKEN_ID!, process.env.MUX_TOKEN_SECRET!)
 
 export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   try {
+    const resolvedParams = await params
     const { userId } = await auth()
     // eslint-disable-next-line
     const { isPublished, ...values } = await req.json()
@@ -17,16 +18,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const ownCourse = await db.course.findUnique({ where: { id: params.courseId, createdById: userId } })
+    const ownCourse = await db.course.findUnique({ where: { id: resolvedParams.courseId, createdById: userId } })
     if (!ownCourse) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const chapter = await db.chapter.update({ where: { id: params.chapterId }, data: { ...values } })
+    const chapter = await db.chapter.update({ where: { id: resolvedParams.chapterId }, data: { ...values } })
 
     if (values.videoUrl) {
       /** Cleaning up existing data */
-      const existingMuxData = await db.muxData.findFirst({ where: { chapterId: params.chapterId } })
+      const existingMuxData = await db.muxData.findFirst({ where: { chapterId: resolvedParams.chapterId } })
       if (existingMuxData) {
         await Video.Assets.del(existingMuxData.assetId)
         await db.muxData.delete({ where: { id: existingMuxData.id } })
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
 
       await db.muxData.create({
         data: {
-          chapterId: params.chapterId,
+          chapterId: resolvedParams.chapterId,
           assetId: asset.id,
           playbackId: asset.playback_ids?.[0]?.id,
         },
@@ -55,26 +56,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
 
 export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   try {
+    const resolvedParams = await params
     const { userId } = await auth()
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const ownCourse = await db.course.findUnique({ where: { id: params.courseId, createdById: userId } })
+    const ownCourse = await db.course.findUnique({ where: { id: resolvedParams.courseId, createdById: userId } })
     if (!ownCourse) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
     const chapter = await db.chapter.findUnique({
-      where: { id: params.chapterId, courseId: params.courseId },
+      where: { id: resolvedParams.chapterId, courseId: resolvedParams.courseId },
     })
     if (!chapter) {
       return new NextResponse('Chapter not found', { status: 404 })
     }
 
     if (chapter.videoUrl) {
-      const existingMuxData = await db.muxData.findFirst({ where: { chapterId: params.chapterId } })
+      const existingMuxData = await db.muxData.findFirst({ where: { chapterId: resolvedParams.chapterId } })
 
       if (existingMuxData) {
         await Video.Assets.del(existingMuxData.assetId)
@@ -82,14 +84,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
       }
     }
 
-    const deletedChapter = await db.chapter.delete({ where: { id: params.chapterId } })
+    const deletedChapter = await db.chapter.delete({ where: { id: resolvedParams.chapterId } })
 
     const publishedChaptersInCourse = await db.chapter.count({
-      where: { courseId: params.courseId, isPublished: true },
+      where: { courseId: resolvedParams.courseId, isPublished: true },
     })
 
     if (!publishedChaptersInCourse) {
-      await db.course.update({ where: { id: params.courseId }, data: { isPublished: false } })
+      await db.course.update({ where: { id: resolvedParams.courseId }, data: { isPublished: false } })
     }
 
     return NextResponse.json(deletedChapter)

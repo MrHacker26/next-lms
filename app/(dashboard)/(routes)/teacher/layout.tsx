@@ -1,9 +1,9 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { isTeacher } from '@/lib/teacher'
 
-export default function TeacherLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = auth()
+export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth()
   if (!isTeacher(userId)) {
     return redirect('/')
   }

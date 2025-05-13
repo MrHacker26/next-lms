@@ -1,5 +1,7 @@
-import { auth } from '@clerk/nextjs'
+'use server'
+
 import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
 import { Banner } from '@/components/banner'
 import { Preview } from '@/components/preview'
 import { VideoPlayer } from './_components/video-player'
@@ -8,15 +10,25 @@ import CourseEnrollButton from './_components/course-enroll-button'
 import { Separator } from '@/components/ui/separator'
 import { CourseProgressButton } from './_components/course-progress-button'
 
-export default async function ChapterDetails({ params }: { params: { courseId: string; chapterId: string } }) {
-  const { userId } = auth()
+type Params = Promise<{
+  courseId: string
+  chapterId: string
+}>
+
+type ChapterDetailsProps = {
+  params: Params
+}
+
+export default async function ChapterDetails({ params }: ChapterDetailsProps) {
+  const resolvedParams = await params
+  const { userId } = await auth()
   if (!userId) {
     return redirect('/')
   }
 
   const { chapter, course, muxData, attachments, nextChapter, userProgress, purchase } = await getChapter({
     userId,
-    ...params,
+    ...resolvedParams,
   })
 
   if (!chapter || !course) {
@@ -36,7 +48,7 @@ export default async function ChapterDetails({ params }: { params: { courseId: s
           <VideoPlayer
             chapterId={chapter.id}
             title={chapter.title}
-            courseId={params.courseId}
+            courseId={resolvedParams.courseId}
             nextChapterId={nextChapter?.id}
             playbackId={muxData?.playbackId!}
             isLocked={isLocked}
@@ -49,13 +61,13 @@ export default async function ChapterDetails({ params }: { params: { courseId: s
             <h2 className="mb-2 text-2xl font-semibold">{chapter.title}</h2>
             {purchase ? (
               <CourseProgressButton
-                chapterId={params.chapterId}
-                courseId={params.courseId}
+                chapterId={resolvedParams.chapterId}
+                courseId={resolvedParams.courseId}
                 nextChapterId={nextChapter?.id}
                 isCompleted={!!userProgress?.isCompleted}
               />
             ) : (
-              <CourseEnrollButton courseId={params.courseId} price={course.price!} />
+              <CourseEnrollButton courseId={resolvedParams.courseId} price={course.price!} />
             )}
           </div>
 

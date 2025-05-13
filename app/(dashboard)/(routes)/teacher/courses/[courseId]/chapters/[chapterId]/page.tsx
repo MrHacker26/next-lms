@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Eye, LayoutDashboard, Video } from 'lucide-react'
@@ -13,8 +13,16 @@ import { ChapterAccessForm } from './_components/chapter-access-form'
 import { ChapterVideoForm } from './_components/chapter-video-form'
 import { ChapterActions } from './_components/chapter-actions'
 
-const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId: string } }) => {
-  const { userId } = auth()
+type ChapterIdPageProps = {
+  params: Promise<{
+    courseId: string
+    chapterId: string
+  }>
+}
+
+const ChapterIdPage = async ({ params }: ChapterIdPageProps) => {
+  const resolvedParams = await params
+  const { userId } = await auth()
 
   if (!userId) {
     return redirect('/')
@@ -22,8 +30,8 @@ const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId
 
   const chapter = await db.chapter.findUnique({
     where: {
-      id: params.chapterId,
-      courseId: params.courseId,
+      id: resolvedParams.chapterId,
+      courseId: resolvedParams.courseId,
     },
     include: {
       muxData: true,
@@ -52,7 +60,7 @@ const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId
         <div className="flex items-center justify-between">
           <div className="w-full">
             <Link
-              href={`/teacher/courses/${params.courseId}`}
+              href={`/teacher/courses/${resolvedParams.courseId}`}
               className="mb-6 flex items-center text-sm transition hover:opacity-75"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -65,8 +73,8 @@ const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId
               </div>
               <ChapterActions
                 disabled={!isComplete}
-                courseId={params.courseId}
-                chapterId={params.chapterId}
+                courseId={resolvedParams.courseId}
+                chapterId={resolvedParams.chapterId}
                 isPublished={chapter.isPublished}
               />
             </div>
@@ -79,15 +87,27 @@ const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId
                 <IconBadge icon={LayoutDashboard} />
                 <h2 className="text-xl">Customize your chapter</h2>
               </div>
-              <ChapterTitleForm initialData={chapter} courseId={params.courseId} chapterId={params.chapterId} />
-              <ChapterDescriptionForm initialData={chapter} courseId={params.courseId} chapterId={params.chapterId} />
+              <ChapterTitleForm
+                initialData={chapter}
+                courseId={resolvedParams.courseId}
+                chapterId={resolvedParams.chapterId}
+              />
+              <ChapterDescriptionForm
+                initialData={chapter}
+                courseId={resolvedParams.courseId}
+                chapterId={resolvedParams.chapterId}
+              />
             </div>
             <div>
               <div className="flex items-center gap-x-2">
                 <IconBadge icon={Eye} />
                 <h2 className="text-xl">Access Settings</h2>
               </div>
-              <ChapterAccessForm initialData={chapter} courseId={params.courseId} chapterId={params.chapterId} />
+              <ChapterAccessForm
+                initialData={chapter}
+                courseId={resolvedParams.courseId}
+                chapterId={resolvedParams.chapterId}
+              />
             </div>
           </div>
           <div>
@@ -95,7 +115,11 @@ const ChapterIdPage = async ({ params }: { params: { courseId: string; chapterId
               <IconBadge icon={Video} />
               <h2 className="text-xl">Add a video</h2>
             </div>
-            <ChapterVideoForm initialData={chapter} chapterId={params.chapterId} courseId={params.courseId} />
+            <ChapterVideoForm
+              initialData={chapter}
+              chapterId={resolvedParams.chapterId}
+              courseId={resolvedParams.courseId}
+            />
           </div>
         </div>
       </div>

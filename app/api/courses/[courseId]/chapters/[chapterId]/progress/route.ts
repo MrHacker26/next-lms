@@ -1,10 +1,16 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function PUT(req: NextRequest, { params }: { params: { courseId: string; chapterId: string } }) {
+type Progress = Promise<{
+  courseId: string
+  chapterId: string
+}>
+
+export async function PUT(req: NextRequest, { params }: { params: Progress }) {
   try {
-    const { userId } = auth()
+    const { chapterId } = await params
+    const { userId } = await auth()
     const { isCompleted } = await req.json()
 
     if (!userId) {
@@ -12,9 +18,9 @@ export async function PUT(req: NextRequest, { params }: { params: { courseId: st
     }
 
     const userProgress = await db.userProgress.upsert({
-      where: { userId_chapterId: { userId, chapterId: params.chapterId } },
+      where: { userId_chapterId: { userId, chapterId } },
       update: { isCompleted },
-      create: { userId, chapterId: params.chapterId, isCompleted },
+      create: { userId, chapterId, isCompleted },
     })
 
     return NextResponse.json(userProgress)
