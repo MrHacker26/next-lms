@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(course)
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }

@@ -32,7 +32,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ course
     })
 
     return NextResponse.json(course)
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

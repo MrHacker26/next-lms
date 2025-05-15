@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: Attachmen
     })
 
     return NextResponse.json(attachment)
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal server error', { status: 500 })
   }
 }

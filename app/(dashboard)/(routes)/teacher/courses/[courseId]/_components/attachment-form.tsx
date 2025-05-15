@@ -30,6 +30,7 @@ export const AttachmentForm = ({ initialData, courseId }: AttachmentFormProps) =
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      formSchema.parse(values)
       await axios.post(`/api/courses/${courseId}/attachments`, values)
       toast.success('Course updated')
       toggleEdit()
