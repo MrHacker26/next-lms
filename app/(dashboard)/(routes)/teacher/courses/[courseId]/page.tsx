@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { CircleDollarSign, File, LayoutDashboard, ListChecks } from 'lucide-react'
 
@@ -14,15 +14,22 @@ import { ChaptersForm } from './_components/chapters-form'
 import { Banner } from '@/components/banner'
 import Actions from './_components/actions'
 
-const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
-  const { userId } = auth()
+type CourseIdPageProps = {
+  params: Promise<{
+    courseId: string
+  }>
+}
+
+const CourseIdPage = async ({ params }: CourseIdPageProps) => {
+  const resolvedParams = await params
+  const { userId } = await auth()
 
   if (!userId) {
     return redirect('/')
   }
 
   const course = await db.course.findUnique({
-    where: { id: params.courseId, createdById: userId },
+    where: { id: resolvedParams.courseId, createdById: userId },
     include: { attachments: { orderBy: { createdAt: 'desc' } }, chapters: { orderBy: { position: 'asc' } } },
   })
 
@@ -61,7 +68,7 @@ const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
             <h1 className="text-2xl font-medium">Course setup</h1>
             <span className="text-sm text-slate-700">Complete all fields {completionText}</span>
           </div>
-          <Actions disabled={!isComplete} courseId={params.courseId} isPublished={course.isPublished} />
+          <Actions disabled={!isComplete} courseId={resolvedParams.courseId} isPublished={course.isPublished} />
         </div>
         <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>

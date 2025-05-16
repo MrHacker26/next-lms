@@ -1,9 +1,16 @@
-import { authMiddleware } from '@clerk/nextjs'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
-export default authMiddleware({ publicRoutes: ['/api/webhook', '/api/uploadthing'] })
+const publicRoutes = ['/api/webhook']
+const isPublicRoute = createRouteMatcher(publicRoutes)
+
+const protectedRoutes = ['/', '/(api|trpc)']
+const isProtectedRoute = createRouteMatcher(protectedRoutes)
+
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req) && isProtectedRoute(req)) {
+    await auth.protect()
+  }
+})
 
 export const config = {
   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],

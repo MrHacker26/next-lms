@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
 import { db } from '@/lib/db'
@@ -8,14 +8,14 @@ import { getCourses } from '@/actions/get-courses'
 import CoursesList from '@/components/course-list'
 
 interface SearchPageProps {
-  searchParams: {
+  searchParams: Promise<{
     title: string
     categoryId: string
-  }
+  }>
 }
 
 const SearchPage = async ({ searchParams }: SearchPageProps) => {
-  const { userId } = auth()
+  const { userId } = await auth()
 
   if (!userId) {
     return redirect('/')
@@ -29,7 +29,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   const courses = await getCourses({
     userId,
-    ...searchParams,
+    ...(await searchParams),
   })
 
   return (

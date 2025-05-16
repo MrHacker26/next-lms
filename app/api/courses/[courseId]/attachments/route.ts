@@ -1,11 +1,17 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { isTeacher } from '@/lib/teacher'
 
-export async function POST(request: NextRequest, { params }: { params: { courseId: string } }) {
+type Attachment = Promise<{
+  courseId: string
+  attachmentId: string
+}>
+
+export async function POST(request: NextRequest, { params }: { params: Attachment }) {
+  const { courseId } = await params
   try {
-    const { userId } = auth()
+    const { userId } = await auth()
     const { url } = await request.json()
 
     if (!userId || !isTeacher(userId)) {
@@ -14,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: { courseI
 
     const courseOwner = await db.course.findUnique({
       where: {
-        id: params.courseId,
+        id: courseId,
         createdById: userId,
       },
     })
@@ -27,12 +33,12 @@ export async function POST(request: NextRequest, { params }: { params: { courseI
       data: {
         url,
         name: url.split('/').pop(),
-        courseId: params.courseId,
+        courseId,
       },
     })
 
     return NextResponse.json(attachment)
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal server error', { status: 500 })
   }
 }

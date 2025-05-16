@@ -6,14 +6,15 @@ import { db } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
-  const signature = headers().get('Stripe-Signature') as string
+  const signature = (await headers()).get('Stripe-Signature') as string
 
   let event: Stripe.Event
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (error: any) {
-    return new NextResponse(`Webhook error ${error?.message}`, { status: 400 })
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new NextResponse(`Webhook error ${errMessage}`, { status: 400 })
   }
 
   const session = event.data.object as Stripe.Checkout.Session

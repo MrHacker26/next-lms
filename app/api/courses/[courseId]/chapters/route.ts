@@ -1,11 +1,12 @@
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { isTeacher } from '@/lib/teacher'
 
-export async function POST(req: NextRequest, { params }: { params: { courseId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ courseId: string }> }) {
   try {
-    const { userId } = auth()
+    const resolvedParams = await params
+    const { userId } = await auth()
     const { title } = await req.json()
 
     if (!userId || !isTeacher(userId)) {
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { courseId: s
     }
 
     const courseOwner = await db.course.findUnique({
-      where: { id: params.courseId, createdById: userId },
+      where: { id: resolvedParams.courseId, createdById: userId },
     })
 
     if (!courseOwner) {
@@ -21,14 +22,14 @@ export async function POST(req: NextRequest, { params }: { params: { courseId: s
     }
 
     const lastChapter = await db.chapter.findFirst({
-      where: { courseId: params.courseId },
+      where: { courseId: resolvedParams.courseId },
       orderBy: { position: 'desc' },
     })
 
     const newPosition = lastChapter ? lastChapter.position + 1 : 1
 
     const newChapter = await db.chapter.create({
-      data: { title, courseId: params.courseId, position: newPosition },
+      data: { title, courseId: resolvedParams.courseId, position: newPosition },
     })
 
     return NextResponse.json(newChapter)
